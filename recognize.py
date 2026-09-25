@@ -40,23 +40,20 @@ for name in np.unique(y):
 
 # ---------- เปิดกล้องแล้วทายหน้า ----------
 # ระยะห่างเกิน THRESHOLD = ไม่คล้ายใครในข้อมูลเลย -> Unknown
-# เลื่อนแถบ threshold บนหน้าต่างเพื่อปรับได้ระหว่างรัน
 THRESHOLD = 12000
 
 cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-cv2.namedWindow('recognize')
-cv2.createTrackbar('threshold', 'recognize', THRESHOLD, 20000, lambda v: None)
 while True:
     ret, frame = cap.read()
     if not ret:
         break
     face = cv2.cvtColor(frame[120:300, 250:390, :], cv2.COLOR_BGR2GRAY)
     name, dist = knn(X, y, prep(face))
-    if dist > cv2.getTrackbarPos('threshold', 'recognize'):
+    if dist > THRESHOLD:
         name = 'Unknown'
     color = (0, 0, 255) if name == 'Unknown' else (0, 255, 0)   # แดง = Unknown
     cv2.rectangle(frame, (250, 120), (390, 300), color, 2)
-    cv2.putText(frame, f'{name} ({dist:.0f})', (250, 110),
+    cv2.putText(frame, name, (250, 110),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
     cv2.imshow('recognize', frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):   # q = ออก
