@@ -1,63 +1,38 @@
-import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 import os
+import cv2  # เพิ่ม
 
-# โฟลเดอร์ที่ไฟล์นี้อยู่ — รันจากที่ไหนก็หารูปเจอ (สำคัญตอนคนอื่น clone ไปรัน)
-BASE = os.path.dirname(os.path.abspath(__file__))
-
-
-def knn(X, y, z, k=3):
+def knn(X, y, z, k=1):
     d = np.sum((X - z) ** 2, axis=1)
     idx = np.argsort(d)[:k]
     cls, vote = np.unique(y[idx], return_counts=True)
-    return cls[np.argmax(vote)], np.sqrt(d[idx[0]])
+    return cls[np.argmax(vote)]
 
-
-def prep(gray):
-    # ปรับแสงให้เท่ากัน แล้วแปลงเป็น float (ถ้าเป็น uint8 ตอนลบกันค่าจะวนติดลบผิด)
-    return cv2.equalizeHist(gray).astype(np.float32).flatten()
-
-
-# ---------- โหลดข้อมูล: 1 โฟลเดอร์ = 1 คน ----------
-X, y = [], []
-for f in sorted(os.listdir(BASE)):
-    folder = os.path.join(BASE, f)
-    if not os.path.isdir(folder) or f.startswith(('.', '_')):
-        continue
-    for i in os.listdir(folder):
-        if i.endswith('.jpg'):
-            img = cv2.imread(os.path.join(folder, i), cv2.IMREAD_GRAYSCALE)
-            if img is not None and img.shape == (180, 140):
-                X.append(prep(img))
+y = []
+X = []
+for f in os.listdir():
+    if not os.path.isfile(f) and not f.startswith("."):
+        for i in os.listdir(f):
+            if i.endswith(".jpg"):
+                x = plt.imread(f+"/"+i)
+                X.append(x.flatten())
                 y.append(f)
+X = np.array(X, dtype=float)  # แก้
+y = np.array(y)               # แก้
+print(X.shape)
+print(y)
 
-if len(set(y)) == 0:
-    raise SystemExit('ไม่พบรูปเลย — รัน "Get data.py" เก็บหน้าก่อน')
-X = np.array(X)
-y = np.array(y)
-for name in np.unique(y):
-    print(f'{name}: {np.sum(y == name)} รูป')
-
-# ---------- เปิดกล้องแล้วทายหน้า ----------
-# ระยะห่างเกิน THRESHOLD = ไม่คล้ายใครในข้อมูลเลย -> Unknown
-THRESHOLD = 12000
-
+# ===== เพิ่ม: เปิดกล้องแล้วทายชื่อ =====
 cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 while True:
     ret, frame = cap.read()
-    if not ret:
-        break
     face = cv2.cvtColor(frame[120:300, 250:390, :], cv2.COLOR_BGR2GRAY)
-    name, dist = knn(X, y, prep(face))
-    if dist > THRESHOLD:
-        name = 'Unknown'
-    color = (0, 0, 255) if name == 'Unknown' else (0, 255, 0)   # แดง = Unknown
-    cv2.rectangle(frame, (250, 120), (390, 300), color, 2)
-    cv2.putText(frame, name, (250, 110),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
-    cv2.imshow('recognize', frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):   # q = ออก
+    name = knn(X, y, face.flatten().astype(float))
+    cv2.rectangle(frame, (250,120), (390,300), (0,255,0), 2)
+    cv2.putText(frame, name, (250,110), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
+    cv2.imshow('frame', frame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
         break
-
 cap.release()
 cv2.destroyAllWindows()
