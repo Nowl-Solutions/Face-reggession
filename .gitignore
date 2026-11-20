@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+
+# Kmean dataset and outputs: file names contain real student IDs
+ML_Data/
+Face_Groups_*/
