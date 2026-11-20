@@ -14,3 +14,4 @@ while True:
     if cv2.waitKey(1) & 0xFF == ord('s'):
         cv2.imwrite(f'{name}/{i}.jpg', face)
         i += 1
+ 
